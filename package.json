@@ -1,0 +1,35 @@
+{
+    "name": "pushgateway-action",
+    "version": "0.0.1",
+    "description": "Record Metrics about a GitHub Actions run with the prometheus Pushgateway",
+    "main": "out/index.js",
+    "scripts": {
+        "build": "npx ncc build src/index.ts -m -o out/main/ && npx ncc build src/setup.ts -m -o out/pre/",
+        "watch": "npx ncc build src/index.ts -m -w -o out/main/",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/brose-ebike/pushgateway-action"
+    },
+    "keywords": [],
+    "author": "Brose Fahrzeugteile SE & Co. KG, Bamberg",
+    "license": "Apache 2.0",
+    "bugs": {
+        "url": "https://github.com/brose-ebike/pushgateway-action/issues"
+    },
+    "homepage": "https://github.com/brose-ebike/pushgateway-action#readme",
+    "dependencies": {
+        "@actions/core": "^1.6.0",
+        "@actions/exec": "^1.1.0",
+        "@actions/github": "^5.0.0",
+        "buffer": "^6.0.3",
+        "node-fetch": "^3.2.1"
+    },
+    "devDependencies": {
+        "@types/mustache": "^4.1.1",
+        "@types/node": "^15.3.0",
+        "@vercel/ncc": "^0.33.3",
+        "typescript": "^4.2.4"
+    }
+}

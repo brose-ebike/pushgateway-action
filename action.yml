@@ -1,0 +1,22 @@
+name: 'Pushgateway Action'
+description: 'Create a release documentation from the repository PRs'
+branding:
+  icon: 'file-text'  
+  color: 'red'
+inputs:
+  url:
+    required: true
+    description: "The url for the push gateway with shared labels"
+  status:
+    required: true
+    description: "The job status of this run"
+  username:
+    required: false
+    description: "username for basic auth"
+  password:
+    required: false
+    description: "username for basic auth"
+runs:
+  using: 'node16'
+  pre: 'out/pre/index.js'
+  main: 'out/main/index.js'
