@@ -19,10 +19,11 @@ function appendLabelsToUrl(url: string): string {
     if (!result.endsWith("/")) {
         result += "/"
     }
+    const pairs = []
     for (const key in labels) {
-        result += `${key}@base64/${base64encode(labels[key])}/`
+        pairs.push(`${key}@base64/${base64encode(labels[key])}`)
     }
-    return result
+    return `${result}${pairs.join("/")}`
 }
 
 async function send(url: string, username: string, password: string, metrics: Metric[]) {
