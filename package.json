@@ -1,6 +1,6 @@
 {
     "name": "pushgateway-action",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Record Metrics about a GitHub Actions run with the prometheus Pushgateway",
     "main": "out/index.js",
     "scripts": {
