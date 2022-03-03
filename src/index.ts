@@ -20,7 +20,7 @@ function appendLabelsToUrl(url: string): string {
         result += "/"
     }
     for (const key in labels) {
-        result += `${key}@base64/${base64encode(labels[key])}`
+        result += `${key}@base64/${base64encode(labels[key])}/`
     }
     return result
 }
