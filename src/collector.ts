@@ -16,18 +16,13 @@ export function stateToValue(state: string): number {
 }
 
 export async function collect(status: string): Promise<Metric[]> {
-    const labels = {
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        workflow: github.context.workflow,
-    }
     const metrics: Metric[] = [];
     // Current Timestamp
     metrics.push({
         name: "github_actions_workflow_timestamp",
         type: "counter",
         description: null,
-        labels: { ...labels },
+        labels: {},
         value: Date.now() / 1000.0,
     })
     // Workflow State
@@ -35,7 +30,7 @@ export async function collect(status: string): Promise<Metric[]> {
         name: "github_actions_workflow_state",
         type: "gauge",
         description: null,
-        labels: { ...labels },
+        labels: {},
         value: stateToValue(status)
     })
     // Workflow duration
@@ -43,7 +38,7 @@ export async function collect(status: string): Promise<Metric[]> {
         name: "github_action_workflow_duration",
         type: "gauge",
         description: null,
-        labels: { ...labels },
+        labels: {},
         value: (Date.now() - parseInt(core.getState(STATE_START_TIME))) / 1000.0
     })
     return metrics
