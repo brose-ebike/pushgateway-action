@@ -11,7 +11,7 @@ async function send(url: string, username: string, password: string, metrics: Me
         const credentials = Buffer.from(`${username}:${password}`).toString('base64')
         headers = { ...headers, "Authorization": `Basic ${credentials}` }
     }
-    const body = metrics.map(serialize).join("\n") + "\n"
+    const body = (await Promise.all(metrics.map(serialize))).join("\n") + "\n"
     const result = await fetch(url, {
         method: "POST",
         headers: headers,
