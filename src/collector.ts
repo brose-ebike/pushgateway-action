@@ -35,7 +35,7 @@ export async function collect(status: string): Promise<Metric[]> {
     })
     // Workflow duration
     metrics.push({
-        name: "github_action_workflow_duration",
+        name: "github_actions_workflow_duration",
         type: "gauge",
         description: null,
         labels: {},
