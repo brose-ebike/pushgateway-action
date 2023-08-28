@@ -31,7 +31,7 @@
         "@types/mocha": "^10.0.1",
         "@types/node": "^20.5.1",
         "@vercel/ncc": "^0.36.1",
-        "chai": "^4.3.7",
+        "chai": "^4.3.8",
         "mocha": "^10.2.0",
         "ts-mocha": "^10.0.0",
         "typescript": "^5.2.2"
