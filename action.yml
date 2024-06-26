@@ -17,6 +17,6 @@ inputs:
     required: false
     description: "username for basic auth"
 runs:
-  using: 'node16'
+  using: 'node20'
   pre: 'out/pre/index.js'
   main: 'out/main/index.js'
