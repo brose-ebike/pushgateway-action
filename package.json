@@ -32,7 +32,7 @@
         "@types/node": "^20.14.8",
         "@vercel/ncc": "^0.38.1",
         "chai": "^4.3.10",
-        "mocha": "^10.4.0",
+        "mocha": "^10.5.2",
         "ts-mocha": "^10.0.0",
         "typescript": "^5.5.2"
     }
