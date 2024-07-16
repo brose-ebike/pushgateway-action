@@ -60,7 +60,7 @@ async function main() {
     const status = core.getInput('status');
     const username = core.getInput('username');
     const password = core.getInput('password');
-    const additionalMetricsString = core.getInput('password');
+    const additionalMetricsString = core.getInput('metrics');
     // Calculated Values
     const workflowMetrics = await collect(status)
     const additionalMetrics = convertToMetrics(additionalMetricsString)
