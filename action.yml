@@ -16,6 +16,9 @@ inputs:
   password:
     required: false
     description: "username for basic auth"
+  metrics:
+    required: false
+    description: "The metrics to push to the push gateway as a json array of metric objects"
 runs:
   using: 'node20'
   pre: 'out/pre/index.js'

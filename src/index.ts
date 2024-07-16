@@ -47,14 +47,24 @@ async function send(url: string, username: string, password: string, metrics: Me
     }
 }
 
+function convertToMetrics(additionalMetrics: string): Metric[] {
+    if (!additionalMetrics || additionalMetrics === "") {
+        return []
+    }
+    return JSON.parse(additionalMetrics)
+}
+
 async function main() {
     // Input
     const url = core.getInput('url');
     const status = core.getInput('status');
     const username = core.getInput('username');
     const password = core.getInput('password');
+    const additionalMetricsString = core.getInput('password');
     // Calculated Values
-    const metrics = await collect(status)
+    const workflowMetrics = await collect(status)
+    const additionalMetrics = convertToMetrics(additionalMetricsString)
+    const metrics = [...workflowMetrics, ...additionalMetrics]
     core.debug(`Created ${metrics.length} Metrics`)
     let fullUrl = appendLabelsToUrl(url)
     await send(fullUrl, username, password, metrics)
