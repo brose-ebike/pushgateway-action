@@ -17,7 +17,7 @@ jobs:
         name: "Determine Tag Name"
         run: |
           TAG_VERSION=$(python3 .github/release.py print)
-          echo ::set-output name=tag::$TAG_VERSION
+          echo "tag=$TAG_VERSION" >> "$GITHUB_OUTPUT"
       - name: "Prepare Git"
         run: |
           git config --global user.email "85950872+brose-ebike-bot@users.noreply.github.com"
