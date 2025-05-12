@@ -29,7 +29,7 @@
         "@types/chai": "^5.2.1",
         "@types/expect": "^24.3.2",
         "@types/mocha": "^10.0.10",
-        "@types/node": "^22.15.3",
+        "@types/node": "^22.15.17",
         "@vercel/ncc": "^0.38.3",
         "chai": "^5.2.0",
         "mocha": "^11.2.2",
