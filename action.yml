@@ -1,8 +1,8 @@
-name: 'Pushgateway Action'
-description: 'Create a release documentation from the repository PRs'
+name: "Pushgateway Action"
+description: "Create a release documentation from the repository PRs"
 branding:
-  icon: 'file-text'  
-  color: 'red'
+  icon: "file-text"
+  color: "red"
 inputs:
   url:
     required: true
@@ -20,6 +20,6 @@ inputs:
     required: false
     description: "The metrics to push to the push gateway as a json array of metric objects"
 runs:
-  using: 'node20'
-  pre: 'out/pre/index.js'
-  main: 'out/main/index.js'
+  using: "node24"
+  pre: "out/pre/index.js"
+  main: "out/main/index.js"
