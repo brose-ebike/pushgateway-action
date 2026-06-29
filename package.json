@@ -4,9 +4,8 @@
     "description": "Record Metrics about a GitHub Actions run with the prometheus Pushgateway",
     "main": "out/index.js",
     "scripts": {
-        "build": "npx ncc build src/index.ts -m -o out/main/ && npx ncc build src/setup.ts -m -o out/pre/",
-        "watch": "npx ncc build src/index.ts -m -w -o out/main/",
-        "test": "npx ts-mocha -p tsconfig.json src/**/*.spec.ts"
+        "build": "esbuild src/index.ts --bundle --platform=node --target=node24 --outfile=out/main/index.js && esbuild src/setup.ts --bundle --platform=node --target=node24 --outfile=out/pre/index.js",
+        "test": "ts-mocha -p tsconfig.json src/**/*.spec.ts"
     },
     "repository": {
         "type": "git",
@@ -30,8 +29,8 @@
         "@types/expect": "^24.3.2",
         "@types/mocha": "^10.0.10",
         "@types/node": "^25.3.5",
-        "@vercel/ncc": "^0.38.4",
         "chai": "^6.2.2",
+        "esbuild": "^0.28.1",
         "mocha": "^11.7.5",
         "ts-mocha": "^11.1.0",
         "typescript": "^5.9.3"
