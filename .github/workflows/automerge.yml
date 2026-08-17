@@ -1,0 +1,129 @@
+---
+name: "Automerge"
+"on":
+  schedule:
+  - cron: "0 0 * * *"
+  workflow_dispatch: null
+permissions:
+  pull-requests: "write"
+  contents: "write"
+jobs:
+  automerge:
+    name: "Automerge Dependabot PRs"
+    runs-on: "ubuntu-latest"
+    steps:
+    - name: "Checkout code"
+      uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
+    - name: "Find and merge Dependabot PRs"
+      uses: "actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3"
+      with:
+        github-token: "${{ secrets.GITHUB_TOKEN }}"
+        script: |
+          const { owner, repo } = context.repo;
+
+          // Get all open pull requests
+          const { data: pullRequests } = await github.rest.pulls.list({
+            owner,
+            repo,
+            state: 'open',
+          });
+
+          // Filter for Dependabot PRs
+          const dependabotPRs = pullRequests.filter(pr => pr.user.login === 'dependabot[bot]');
+
+          console.log(`Found ${dependabotPRs.length} Dependabot PR(s)`);
+
+          if (dependabotPRs.length === 0) {
+            console.log('No Dependabot PRs to merge');
+            return;
+          }
+
+          let mergedCount = 0;
+          let failedCount = 0;
+
+          for (const pr of dependabotPRs) {
+            console.log(`\
+          Processing PR #${pr.number}: ${pr.title}`);
+
+            try {
+              // Get PR details
+              const { data: prDetails } = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: pr.number,
+              });
+
+              // Check if PR has merge conflicts
+              if (prDetails.mergeable === false) {
+                console.log(`  ❌ Skipping - has merge conflicts`);
+                failedCount++;
+                continue;
+              }
+
+              // We no longer fetch rulesets or required checks; always validate all checks for the PR commit
+
+              // Check all status checks and check runs (require all to be successful before merging)
+              try {
+                const { data: checkRuns } = await github.rest.checks.listForRef({
+                  owner,
+                  repo,
+                  ref: prDetails.head.sha,
+                });
+
+                const { data: commitStatus } = await github.rest.repos.getCombinedStatusForRef({
+                  owner,
+                  repo,
+                  ref: prDetails.head.sha,
+                });
+
+                // Combine check runs and commit statuses into a single list of checks
+                const allChecks = [
+                  ...((checkRuns && checkRuns.check_runs) || []).map(run => ({ name: run.name, status: run.conclusion })),
+                  ...((commitStatus && commitStatus.statuses) || []).map(status => ({ name: status.context, status: status.state === 'success' ? 'success' : 'failure' }))
+                ];
+
+                // If there are no checks at all, log and proceed
+                if (allChecks.length === 0) {
+                  console.log('  ℹ️ No checks found for this commit');
+                } else {
+                  console.log(`  Found checks: ${allChecks.map(c => `${c.name}:${c.status}`).join(', ')}`);
+                }
+
+                // Determine failing checks (anything not equal to 'success')
+                const failedChecks = allChecks.filter(c => c.status !== 'success').map(c => `${c.name} (${c.status})`);
+
+                if (failedChecks.length > 0) {
+                  console.log(`  ❌ Skipping - some checks are not passing: ${failedChecks.join(', ')}`);
+                  failedCount++;
+                  continue;
+                }
+
+                console.log('  ✅ All checks passed');
+
+              } catch (error) {
+                console.log(`  ⚠️ Could not determine checks status: ${error.message}`);
+                console.log('  Proceeding without checks validation');
+              }
+
+              // Merge the PR
+              await github.rest.pulls.merge({
+                owner,
+                repo,
+                pull_number: pr.number,
+                merge_method: 'squash',
+              });
+
+              console.log(`  ✅ Merged successfully`);
+              mergedCount++;
+
+            } catch (error) {
+              console.log(`  ❌ Failed to merge: ${error.message}`);
+              failedCount++;
+            }
+          }
+
+          console.log(`\
+          === Summary ===`);
+          console.log(`Total Dependabot PRs: ${dependabotPRs.length}`);
+          console.log(`Merged: ${mergedCount}`);
+          console.log(`Failed/Skipped: ${failedCount}`);
