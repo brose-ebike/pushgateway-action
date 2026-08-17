@@ -2,7 +2,7 @@
 name: "Automerge"
 "on":
   schedule:
-  - cron: "0 0 * * *"
+  - cron: "0 6-18/2 * * 1-5"
   workflow_dispatch: null
 permissions:
   pull-requests: "write"
@@ -20,6 +20,39 @@ jobs:
         github-token: "${{ secrets.GITHUB_TOKEN }}"
         script: |
           const { owner, repo } = context.repo;
+
+          // Identity used to post comments, so we can recognize our own past
+          // rebase requests and avoid asking Dependabot again on every run.
+          const { data: currentUser } = await github.rest.users.getAuthenticated();
+
+          // Ask Dependabot to rebase a PR, but avoid spamming the same request
+          // if we already asked and it hasn't resolved yet. Used both when we
+          // proactively detect conflicts and as a fallback when a merge
+          // attempt fails because of conflicts.
+          async function requestDependabotRebase(pr) {
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pr.number,
+              per_page: 10,
+              sort: 'created',
+              direction: 'desc',
+            });
+
+            const alreadyRequested = comments.some(c => c.user.login === currentUser.login && c.body.includes('@dependabot rebase'));
+
+            if (alreadyRequested) {
+              console.log('  ℹ️ Rebase already requested, waiting for Dependabot');
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: '@dependabot rebase',
+              });
+              console.log('  🔄 Requested rebase via @dependabot rebase comment');
+            }
+          }
 
           // Get all open pull requests
           const { data: pullRequests } = await github.rest.pulls.list({
@@ -55,66 +88,124 @@ jobs:
 
               // Check if PR has merge conflicts
               if (prDetails.mergeable === false) {
-                console.log(`  ❌ Skipping - has merge conflicts`);
+                console.log(`  ❌ Has merge conflicts`);
+                await requestDependabotRebase(pr);
                 failedCount++;
                 continue;
               }
 
-              // We no longer fetch rulesets or required checks; always validate all checks for the PR commit
-
-              // Check all status checks and check runs (require all to be successful before merging)
+              // Determine the checks required by branch protection / rulesets for the base branch
               try {
-                const { data: checkRuns } = await github.rest.checks.listForRef({
-                  owner,
-                  repo,
-                  ref: prDetails.head.sha,
-                });
+                const requiredCheckNames = new Set();
 
-                const { data: commitStatus } = await github.rest.repos.getCombinedStatusForRef({
-                  owner,
-                  repo,
-                  ref: prDetails.head.sha,
-                });
+                try {
+                  const { data: protection } = await github.rest.repos.getStatusChecksProtection({
+                    owner,
+                    repo,
+                    branch: prDetails.base.ref,
+                  });
+                  (protection.checks || []).forEach(check => requiredCheckNames.add(check.context));
+                  (protection.contexts || []).forEach(name => requiredCheckNames.add(name));
+                } catch (error) {
+                  if (error.status !== 404) {
+                    console.log(`  ⚠️ Could not read branch protection required checks: ${error.message}`);
+                  }
+                }
 
-                // Combine check runs and commit statuses into a single list of checks
-                const allChecks = [
-                  ...((checkRuns && checkRuns.check_runs) || []).map(run => ({ name: run.name, status: run.conclusion })),
-                  ...((commitStatus && commitStatus.statuses) || []).map(status => ({ name: status.context, status: status.state === 'success' ? 'success' : 'failure' }))
-                ];
+                try {
+                  const { data: rules } = await github.rest.repos.getBranchRules({
+                    owner,
+                    repo,
+                    branch: prDetails.base.ref,
+                  });
+                  (rules || [])
+                    .filter(rule => rule.type === 'required_status_checks')
+                    .forEach(rule => {
+                      (rule.parameters?.required_status_checks || []).forEach(check => requiredCheckNames.add(check.context));
+                    });
+                } catch (error) {
+                  console.log(`  ⚠️ Could not read branch ruleset required checks: ${error.message}`);
+                }
 
-                // If there are no checks at all, log and proceed
-                if (allChecks.length === 0) {
-                  console.log('  ℹ️ No checks found for this commit');
+                if (requiredCheckNames.size === 0) {
+                  console.log('  ℹ️ No required status checks configured for this branch');
                 } else {
-                  console.log(`  Found checks: ${allChecks.map(c => `${c.name}:${c.status}`).join(', ')}`);
+                  console.log(`  Required checks: ${Array.from(requiredCheckNames).join(', ')}`);
+
+                  const { data: checkRuns } = await github.rest.checks.listForRef({
+                    owner,
+                    repo,
+                    ref: prDetails.head.sha,
+                  });
+
+                  const { data: commitStatus } = await github.rest.repos.getCombinedStatusForRef({
+                    owner,
+                    repo,
+                    ref: prDetails.head.sha,
+                  });
+
+                  // Combine check runs and commit statuses into a single list of checks
+                  const allChecks = [
+                    ...((checkRuns && checkRuns.check_runs) || []).map(run => ({ name: run.name, status: run.conclusion })),
+                    ...((commitStatus && commitStatus.statuses) || []).map(status => ({ name: status.context, status: status.state === 'success' ? 'success' : 'failure' }))
+                  ];
+
+                  console.log(`  Found checks: ${allChecks.map(c => `${c.name}:${c.status}`).join(', ') || 'none'}`);
+
+                  // A required check is only satisfied by a completed, successful run.
+                  // Skipped/neutral runs do not count for required checks - if it's
+                  // required, it must actually have run and passed.
+                  const notPassing = [];
+                  for (const requiredName of requiredCheckNames) {
+                    const matches = allChecks.filter(c => c.name === requiredName);
+                    if (matches.length === 0) {
+                      notPassing.push(`${requiredName} (missing)`);
+                      continue;
+                    }
+                    notPassing.push(...matches.filter(c => c.status !== 'success').map(c => `${c.name} (${c.status})`));
+                  }
+
+                  if (notPassing.length > 0) {
+                    console.log(`  ❌ Skipping - required checks not passing: ${notPassing.join(', ')}`);
+                    failedCount++;
+                    continue;
+                  }
+
+                  console.log('  ✅ All required checks passed');
                 }
-
-                // Determine failing checks (anything not equal to 'success')
-                const failedChecks = allChecks.filter(c => c.status !== 'success').map(c => `${c.name} (${c.status})`);
-
-                if (failedChecks.length > 0) {
-                  console.log(`  ❌ Skipping - some checks are not passing: ${failedChecks.join(', ')}`);
-                  failedCount++;
-                  continue;
-                }
-
-                console.log('  ✅ All checks passed');
 
               } catch (error) {
-                console.log(`  ⚠️ Could not determine checks status: ${error.message}`);
+                console.log(`  ⚠️ Could not determine required checks status: ${error.message}`);
                 console.log('  Proceeding without checks validation');
               }
 
-              // Merge the PR
-              await github.rest.pulls.merge({
-                owner,
-                repo,
-                pull_number: pr.number,
-                merge_method: 'squash',
-              });
+              // Merge the PR. GitHub's `mergeable` field is computed
+              // asynchronously and can be stale/null when checked above, so
+              // this merge call is the authoritative check - treat a
+              // conflict rejection here the same as a proactively detected
+              // conflict and ask Dependabot to rebase.
+              try {
+                await github.rest.pulls.merge({
+                  owner,
+                  repo,
+                  pull_number: pr.number,
+                  merge_method: 'squash',
+                });
 
-              console.log(`  ✅ Merged successfully`);
-              mergedCount++;
+                console.log(`  ✅ Merged successfully`);
+                mergedCount++;
+              } catch (error) {
+                const isConflict = error.status === 405 || /merge conflict/i.test(error.message || '');
+
+                if (isConflict) {
+                  console.log(`  ❌ Has merge conflicts (detected at merge time)`);
+                  await requestDependabotRebase(pr);
+                } else {
+                  console.log(`  ❌ Failed to merge: ${error.message}`);
+                }
+
+                failedCount++;
+              }
 
             } catch (error) {
               console.log(`  ❌ Failed to merge: ${error.message}`);
