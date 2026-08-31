@@ -28,8 +28,8 @@ importers:
         specifier: ^10.0.10
         version: 10.0.10
       '@types/node':
-        specifier: ^26.2.0
-        version: 26.2.0
+        specifier: ^26.4.0
+        version: 26.4.0
       chai:
         specifier: ^6.2.2
         version: 6.2.2
@@ -41,7 +41,7 @@ importers:
         version: 11.8.0
       ts-mocha:
         specifier: ^11.1.0
-        version: 11.1.0(mocha@11.8.0)(ts-node@10.9.2(@types/node@26.2.0)(typescript@5.9.3))
+        version: 11.1.0(mocha@11.8.0)(ts-node@10.9.2(@types/node@26.4.0)(typescript@5.9.3))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -307,8 +307,8 @@ packages:
   '@types/mocha@10.0.10':
     resolution: {integrity: sha512-xPyYSz1cMPnJQhl0CLMH68j3gprKZaTjG3s5Vi+fDgx+uhG9NOXwbVt52eFS8ECyXhyKcjDLCBEqBExKuiZb7Q==}
 
-  '@types/node@26.2.0':
-    resolution: {integrity: sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==}
+  '@types/node@26.4.0':
+    resolution: {integrity: sha512-faiGnoIrLH/V8cibOMEAZ8pMw6oXqSukl29ra4mN8GdaB2ZewzeaLj+INpV5N+Z1eKWzY+IzaIZH2EIR6YZRNQ==}
 
   acorn-walk@8.3.5:
     resolution: {integrity: sha512-HEHNfbars9v4pgpW6SO1KSPkfoS0xVOM/9UzkJltjlsHZmJasxg8aXkuZa7SMf8vKGIBhpUsPluQSqhJFCqebw==}
@@ -927,7 +927,7 @@ snapshots:
 
   '@types/mocha@10.0.10': {}
 
-  '@types/node@26.2.0':
+  '@types/node@26.4.0':
     dependencies:
       undici-types: 8.3.0
 
@@ -1235,19 +1235,19 @@ snapshots:
     dependencies:
       has-flag: 4.0.0
 
-  ts-mocha@11.1.0(mocha@11.8.0)(ts-node@10.9.2(@types/node@26.2.0)(typescript@5.9.3)):
+  ts-mocha@11.1.0(mocha@11.8.0)(ts-node@10.9.2(@types/node@26.4.0)(typescript@5.9.3)):
     dependencies:
       mocha: 11.8.0
-      ts-node: 10.9.2(@types/node@26.2.0)(typescript@5.9.3)
+      ts-node: 10.9.2(@types/node@26.4.0)(typescript@5.9.3)
 
-  ts-node@10.9.2(@types/node@26.2.0)(typescript@5.9.3):
+  ts-node@10.9.2(@types/node@26.4.0)(typescript@5.9.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.13
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 26.2.0
+      '@types/node': 26.4.0
       acorn: 8.18.0
       acorn-walk: 8.3.5
       arg: 4.1.3
